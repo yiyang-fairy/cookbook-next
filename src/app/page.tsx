@@ -33,13 +33,9 @@ export default function Home() {
   const fetchRecipes = async (type: RecipeType) => {
     try {
       setLoadingType(type);
-      const response = await fetch(
-        type === RecipeType.ALL 
-          ? '/api/menu' 
-          : `/api/menu?type=${type}`
-      );
+      const response = await fetch(`/api/menu?type=${type}`);
       const data = await response.json();
-      setRecipes(data);  // 直接使用服务端过滤后的数据
+      setRecipes(data || []);  // 直接使用服务端过滤后的数据
     } catch (error) {
       console.error('获取菜单失败:', error);
     } finally {
