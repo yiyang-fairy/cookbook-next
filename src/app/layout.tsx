@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import 'antd-mobile/bundle/style.css'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,14 +20,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body suppressHydrationWarning>
+        <div 
+          className="fixed inset-0 z-[-1] bg-cover bg-center bg-no-repeat opacity-70"
+          style={{ backgroundImage: 'url(/imgs/food005.jpg)' }}
+        />
         {children}
       </body>
     </html>
