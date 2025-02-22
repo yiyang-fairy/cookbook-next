@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import 'antd-mobile/bundle/style.css'
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import "antd-mobile/bundle/style.css";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -24,11 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <div 
+        <div
           className="fixed inset-0 z-[-1] bg-cover bg-center bg-no-repeat opacity-70"
-          style={{ backgroundImage: 'url(/imgs/food005.jpg)' }}
+          style={{ backgroundImage: "url(/imgs/food005.jpg)" }}
         />
         {children}
       </body>
