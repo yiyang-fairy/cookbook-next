@@ -36,7 +36,7 @@ export default function Home() {
   const fetchRecipes = async (type: RecipeType) => {
     try {
       setLoadingType(type);
-      const response = await fetch(`/api/menu?type=${activeKey}`);
+      const response = await fetch(`/api/menu-prisma?type=${activeKey}`);
 
       if (!response.ok) {
         const errorData = await response.json();

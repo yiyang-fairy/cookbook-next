@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabase";
+import { prisma } from '@/lib/prisma';  // 使用共享的 Prisma 实例
+import { RecipeType as PrismaRecipeType } from '@prisma/client';
 import { RecipeType } from "@/types/recipe";
 import { NextResponse } from "next/server";
 
@@ -9,25 +10,42 @@ export async function GET(request: Request) {
     const type = searchParams.get("type");
     console.log("type:", type);
 
-    let query = supabase.from("recipes").select("*");
-
-    if (type && type !== RecipeType.ALL) {
-      query = query.eq("type", type);
-    }
-    const { data: recipes, error } = await query;
-
-    if (error) {
-      console.log("GET Error:", error);
-      return NextResponse.json({ error: error }, { status: 500 });
+    // 添加错误处理和重试逻辑
+    let retries = 3;
+    let recipes;
+    
+    while (retries > 0) {
+      try {
+        recipes = await prisma.recipes.findMany({
+          where: type && type !== RecipeType.ALL ? {
+            type: type as PrismaRecipeType
+          } : undefined
+        });
+        break;
+      } catch (error) {
+        console.error(`尝试连接数据库失败，剩余重试次数: ${retries - 1}`);
+        retries--;
+        if (retries === 0) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+      }
     }
 
     return NextResponse.json(recipes);
   } catch (error) {
+    console.error("GET Error:", error);
     return NextResponse.json(
-      { error: "服务器内部错误" + error },
+      { error: "服务器内部错误: " + (error as Error).message },
       { status: 500 }
     );
   }
+}
+
+interface RecipeInput {
+  name: string;
+  type: PrismaRecipeType;
+  ingredients: string[];
+  cooking_time: number;
+  steps: string[];
 }
 
 export async function POST(request: Request) {
@@ -37,14 +55,14 @@ export async function POST(request: Request) {
     console.log("Request body:", body);
 
     // 验证请求体是否为数组或单个对象
-    const dataToInsert = Array.isArray(body) ? body : [body];
+    const dataToInsert: RecipeInput[] = Array.isArray(body) ? body : [body];
 
     // 验证数据格式
-    const isValidData = dataToInsert.every(item => {
+    const isValidData = dataToInsert.every((item: RecipeInput) => {
       // 检查所有必需字段是否存在
       const requiredFields = ['name', 'type', 'ingredients', 'cooking_time', 'steps'];
       const hasAllFields = requiredFields.every(field => {
-        const value = field === 'cooking_time' ? item.cooking_time : item[field];
+        const value = field === 'cooking_time' ? item.cooking_time : item[field as keyof RecipeInput];
         return value !== undefined && value !== null;
       });
 
@@ -54,7 +72,7 @@ export async function POST(request: Request) {
       }
 
       // 验证字段类型和格式
-      const isValidType = Object.values(RecipeType).includes(item.type);
+      const isValidType = Object.values(RecipeType).includes(item.type as RecipeType);
       const isValidIngredients = Array.isArray(item.ingredients) && item.ingredients.every((i: string) => typeof i === 'string');
       const isValidCookingTime = typeof item.cooking_time === 'number' && item.cooking_time > 0;
       const isValidSteps = Array.isArray(item.steps) && item.steps.every((s: string) => typeof s === 'string');
@@ -79,15 +97,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: recipes, error } = await supabase
-      .from("recipes")
-      .insert(dataToInsert)
-      .select();
-
-    if (error) {
-      console.log("Error:", error);
-      return NextResponse.json({ error: "插入菜单数据失败" }, { status: 500 });
-    }
+    const recipes = await prisma.recipes.createMany({
+      data: dataToInsert.map(item => ({
+        ...item,
+        type: item.type as PrismaRecipeType,
+        selected_count: 0,
+        update_time: new Date()
+      }))
+    });
 
     return NextResponse.json(recipes);
   } catch (error) {
@@ -97,4 +114,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+} 
