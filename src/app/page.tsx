@@ -64,74 +64,6 @@ export default function Home() {
     }
   };
 
-  const insertData = () => {
-    console.log("开始批量上传菜单数据");
-    const menuData = [
-      {
-        name: "红烧排骨",
-        type: "MEAT",
-        ingredients: ["排骨", "生抽", "老抽", "料酒", "八角", "葱", "姜", "蒜"],
-        cooking_time: 45,
-        steps: [
-          "排骨切段，冷水下锅焯水",
-          "锅中放油，爆香葱姜蒜",
-          "放入排骨翻炒上色",
-          "加入调料，倒入适量热水",
-          "大火烧开后转小火炖煮30分钟",
-          "收汁即可出锅"
-        ],
-        selected_count: 0
-      },
-      {
-        name: "清炒菜心",
-        type: "VEGETABLE",
-        ingredients: ["菜心", "蒜", "盐", "生抽"],
-        cooking_time: 10,
-        steps: [
-          "菜心洗净切段",
-          "锅中放油，爆香蒜末",
-          "放入菜心快速翻炒",
-          "加入适量盐和生抽调味",
-          "大火快炒至断生即可"
-        ],
-        selected_count: 0
-      },
-      {
-        name: "番茄炒蛋",
-        type: "MIXED",
-        ingredients: ["番茄", "鸡蛋", "葱花", "盐"],
-        cooking_time: 15,
-        steps: [
-          "番茄切块，鸡蛋打散",
-          "锅中放油，炒散鸡蛋盛出",
-          "同一锅中炒番茄",
-          "番茄软化后加入鸡蛋",
-          "加盐调味，撒上葱花即可"
-        ],
-        selected_count: 0
-      }
-    ];
-
-    fetch("/api/menu", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(menuData),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("上传成功:", data);
-        alert("菜单数据上传成功！");
-        // 刷新菜单列表
-        fetchRecipes(activeKey);
-      })
-      .catch((error) => {
-        console.error("上传失败:", error);
-        alert("菜单数据上传失败，请重试");
-      });
-  };
-
   // 初始加载
   useEffect(() => {
     fetchRecipes(RecipeType.ALL);
@@ -206,7 +138,7 @@ export default function Home() {
               <Link
                 key={recipe.id}
                 href={`/detail/${recipe.id}`}
-                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="p-4 border rounded-lg bg-white transition-colors"
               >
                 <h2 className="text-lg font-semibold">{recipe.name}</h2>
                 <p className="text-gray-600">
@@ -222,10 +154,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </div>
-
-      <div onClick={insertData} className=" w-10 h-20 bg-red-700 text-white">
-        insert
       </div>
 
       {/* 转盘按钮 */}

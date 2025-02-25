@@ -2,8 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root:root {
+  --adm-color-primary: #ff6b6b;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+  background-image: url('/imgs/food005.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 @layer base {

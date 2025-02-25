@@ -12,6 +12,7 @@
     "@prisma/client": "^6.4.1",
     "@supabase/supabase-js": "^2.48.1",
     "antd-mobile": "^5.38.1",
+    "antd-mobile-icons": "^0.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.7",
