@@ -1,14 +1,20 @@
 "use client";
 
 import { NavBar, Input, Button, TextArea, Form, Radio, Toast } from "antd-mobile";
+import type { FormInstance } from "antd-mobile/es/components/form";
 import Flex from "@/components/Flex";
 import ImageUploader from '@/components/ImageUploader';
-import { RecipeType, typeMap } from '@/types/recipe';
-import ApiClient from '@/lib/api-client';
-import { useState, useEffect } from "react";
-import type { recipes } from '@prisma/client';
+import { Recipe, RecipeType, typeMap } from '@/types/recipe';
+import { useState } from "react";
 
-interface RecipeForm {
+interface RecipeFormProps {
+  mode: 'view' | 'edit';
+  initialData?: Recipe;
+  onSubmit?: (values: RecipeFormValues) => void;
+  form?: FormInstance<RecipeFormValues>;
+}
+
+export interface RecipeFormValues {
   name: string;
   cover: string;
   type: RecipeType;
@@ -17,20 +23,13 @@ interface RecipeForm {
   steps: string;
 }
 
-export default function RecipeDetail() {
-  const [form] = Form.useForm<RecipeForm>();
+export default function RecipeForm({ mode, initialData, onSubmit, form: externalForm }: RecipeFormProps) {
+  const [form] = Form.useForm(externalForm as FormInstance);
   const [loading, setLoading] = useState(false);
 
-  const recipe = JSON.parse(localStorage.getItem('editRecipe') || '{}');
-  
-  // 添加 useEffect 来处理组件卸载时的清理
-  useEffect(() => {
-    return () => {
-      localStorage.removeItem('editRecipe');
-    };
-  }, []);
-
-  const onFinish = async (values: RecipeForm) => {
+  const handleSubmit = async (values: RecipeFormValues) => {
+    if (mode === 'view' || !onSubmit) return;
+    
     setLoading(true);
     Toast.show({
       icon: 'loading',
@@ -39,32 +38,11 @@ export default function RecipeDetail() {
     });
 
     try {
-      const postData: Partial<recipes> = {
-        ...(recipe.id && { id: recipe.id }),
-        name: values.name.trim(),
-        type: values.type,
-        ingredients: values.ingredients
-          .split('\n')
-          .map(i => i.trim())
-          .flatMap(i => i.split(','))
-          .map(i => i.trim())
-          .filter(i => i.length > 0),
-        cooking_time: Math.max(1, Number(values.cookTime)),
-        steps: values.steps
-          ? values.steps.split('\n').map(s => s.trim()).filter(s => s.length > 0)
-          : ['暂无步骤'],
-        cover_image: values.cover,
-      };
-
-      const savedRecipe: recipes = (await ApiClient.post('/api/menu-prisma', postData))!;
-      if (savedRecipe) {
-        Toast.show({
-          icon: 'success',
-          content: '保存成功',
-        });
-        // 保存成功后返回上一页
-        window.history.back();
-      }
+      await onSubmit(values);
+      Toast.show({
+        icon: 'success',
+        content: '保存成功',
+      });
     } catch (error) {
       Toast.show({
         icon: 'fail',
@@ -77,37 +55,37 @@ export default function RecipeDetail() {
 
   return (
     <Flex direction="column" className="h-screen">
-      {/* 顶部导航栏 */}
       <NavBar
         onBack={() => window.history.back()}
         style={{ backgroundColor: '#ff6b6b', color: '#fff' }}
       >
-        编辑菜谱
+        {mode === 'edit' ? '编辑菜谱' : '菜谱详情'}
       </NavBar>
       <Flex direction="column" className="p-4 overflow-auto flex-1">
         <Form
           form={form}
-          onFinish={onFinish}
+          onFinish={handleSubmit}
           layout='horizontal'
           initialValues={{ 
-            name: recipe.name,
-            cover: recipe.cover_image,
-            type: recipe.type,
-            cookTime: recipe.cooking_time,
-            ingredients: recipe.ingredients?.join('\n'),
-            steps: recipe.steps?.join('\n'),
+            type: 'MIXED',
+            ...initialData,
+            ingredients: initialData?.ingredients?.join('\n'),
+            steps: initialData?.steps?.join('\n'),
           }}
+          disabled={mode === 'view'}
           footer={
-            <Button 
-              block 
-              type='submit' 
-              color='primary' 
-              size='large'
-              loading={loading}
-              disabled={loading}
-            >
-              保存菜谱
-            </Button>
+            mode === 'edit' ? (
+              <Button 
+                block 
+                type='submit' 
+                color='primary' 
+                size='large'
+                loading={loading}
+                disabled={loading}
+              >
+                保存菜谱
+              </Button>
+            ) : null
           }
         >
           {/* 基本信息 */}

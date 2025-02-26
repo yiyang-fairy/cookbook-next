@@ -19,7 +19,7 @@ model cookbook {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model recipes {
-  id             String     @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String
   type           RecipeType
   ingredients    String[]
@@ -27,8 +27,7 @@ model recipes {
   steps          String[]
   selected_count Int?
   update_time    DateTime?  @db.Timestamp(6)
-
-  @@id([id, name, type])
+  cover_image    String?
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -37,15 +36,4 @@ enum RecipeType {
   VEGETABLE
   MIXED
   DIET
-}
-
-model Recipe {
-  id                Int      @id @default(autoincrement())
-  name              String
-  coverImage        String
-  cookingTimeMinutes Int
-  ingredients       String[]
-  steps             String[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
 }

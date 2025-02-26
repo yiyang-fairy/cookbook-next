@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Recipe } from "@/types/recipe";
-import { NavBar, Space, Image } from "antd-mobile";
+import { NavBar, Space, Image, Dialog, Toast } from "antd-mobile";
 import Flex from "@/components/Flex";
 import { EditSOutline, DeleteOutline } from "antd-mobile-icons";
 import ApiClient from '@/lib/api-client';
+import { useRouter } from "next/navigation";
 
 interface RecipeDetailProps {
   id: string;
@@ -14,11 +15,11 @@ interface RecipeDetailProps {
 export default function RecipeDetail({ id }: RecipeDetailProps) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const router = useRouter();
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
-        const data = await ApiClient.get<Recipe>( '/api/menu-prisma', { id: id });
+        const data = await ApiClient.get<Recipe>('/api/menu-prisma', { id: id });
         if (data) {
           setRecipe(data);
         }
@@ -41,11 +42,24 @@ export default function RecipeDetail({ id }: RecipeDetailProps) {
   }
 
   const handleEdit = () => {
-    console.log("编辑");
+    localStorage.setItem('editRecipe', JSON.stringify(recipe));
+    router.push('/edit');
   };
 
   const handleDelete = () => {
-    console.log("删除");
+    Dialog.confirm({
+      content: '是否删除菜谱',
+      onConfirm: async () => {
+        console.log("删除", id);
+        await ApiClient.post('/api/menu-prisma/delete', { id: id });
+        Toast.show({
+          icon: 'success',
+          content: '提交成功',
+          position: 'bottom',
+        })
+        router.push('/');
+      },
+    })
   };
 
   return (
@@ -66,15 +80,14 @@ export default function RecipeDetail({ id }: RecipeDetailProps) {
       <Flex direction="column" className="p-4 overflow-auto flex-1">
         <Image
           className="rounded-md mb-3 drop-shadow-xl w-full h-40"
-          src={recipe.cover_images || `https://picsum.photos/800/400?random=${recipe.id}`}
+          src={recipe.cover_image || `https://picsum.photos/800/400?random=${recipe.id}`}
           fit='cover'
           alt="菜谱图片" />
         {/* 菜品信息 */}
         <Flex direction="column" className="bg-white p-4 mb-3 drop-shadow-xl rounded-md">
           <h2 className="text-xl font-bold mb-2">{recipe.name}</h2>
           <Flex justify="space-between" alignItems="center">
-            <span className="text-gray-500">烹饪时间 {recipe.cookingTime}分钟</span>
-            <span className="text-gray-500">已被选择 {recipe.selectedCount}次</span>
+            <span className="text-gray-500">烹饪时间 {recipe.cooking_time}分钟</span>
           </Flex>
         </Flex>
 

@@ -132,13 +132,10 @@ export default function Home() {
               >
                 <h2 className="text-lg font-semibold">{recipe.name}</h2>
                 <p className="text-gray-600">
-                  烹饪时间: {recipe.cookingTime}分钟
-                </p>
-                <p className="text-gray-600">
-                  已被选择: {recipe.selectedCount}次
+                  烹饪时间: {recipe.cooking_time}分钟
                 </p>
                 <p className="text-sm text-gray-400">
-                  更新时间: {recipe.updateTime}
+                  更新时间: {recipe.update_time}
                 </p>
               </Link>
             ))}

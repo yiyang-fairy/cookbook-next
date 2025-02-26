@@ -19,9 +19,9 @@ export interface Recipe {
   name: string;
   type: RecipeType;
   ingredients: string[];
-  cookingTime: number;
+  cooking_time: number;
   steps: string[];
-  selectedCount: number;
-  updateTime: string;
-  cover_images: string;
+  selected_count: number;
+  update_time: string;
+  cover_image: string;
 } 

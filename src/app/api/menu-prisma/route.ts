@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { RecipeType as PrismaRecipeType } from '@prisma/client';
 import { RecipeType } from "@/types/recipe";
 import { NextResponse } from "next/server";
-import { createErrorResponse, validateFields } from '@/lib/api-utils';
+import { createErrorResponse} from '@/lib/api-utils';
 
 // GET 获取所有菜单项
 export async function GET(request: Request) {
@@ -45,12 +45,13 @@ export async function GET(request: Request) {
 }
 
 interface RecipeInput {
+  id?: string;  // 添加可选的id字段
   name: string;
   type: PrismaRecipeType;
   ingredients: string[];
   cooking_time: number;
   steps: string[];
-  cover_images: string;
+  cover_image: string;  // 改回 cover_image
 }
 
 export async function POST(request: Request) {
@@ -60,6 +61,33 @@ export async function POST(request: Request) {
     console.log("Request body:", body);
 
     const dataToInsert: RecipeInput[] = Array.isArray(body) ? body : [body];
+
+    // 处理单条数据的情况
+    if (!Array.isArray(body)) {
+      const data = body;
+      
+      if (data.id) {
+        const recipe = await prisma.recipes.update({
+          where: {
+            id_name_type: {  
+              id: data.id,
+              name: data.name,
+              type: data.type
+            }
+          },
+          data: {
+            name: data.name,
+            type: data.type as PrismaRecipeType,
+            ingredients: data.ingredients,
+            cooking_time: data.cooking_time,
+            steps: data.steps,
+            cover_image: data.cover_image, 
+            update_time: new Date()
+          }
+        });
+        return NextResponse.json(recipe);
+      }
+    }
 
     const recipes = await prisma.recipes.createMany({
       data: dataToInsert.map(item => ({
