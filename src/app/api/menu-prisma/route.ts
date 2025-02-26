@@ -20,7 +20,6 @@ export async function GET(request: Request) {
     }
 
     try {
-      // 直接尝试查询，简化错误处理逻辑
       const recipes = await prisma.recipes.findMany({
         where: {
           ...(id ? { id: id } : {}),
@@ -28,7 +27,7 @@ export async function GET(request: Request) {
         }
       });
 
-      if (!recipes || recipes.length === 0) {
+      if (!recipes) {
         return createErrorResponse("未找到菜谱数据", 404);
       }
 
@@ -68,13 +67,7 @@ export async function POST(request: Request) {
       
       if (data.id) {
         const recipe = await prisma.recipes.update({
-          where: {
-            id_name_type: {  
-              id: data.id,
-              name: data.name,
-              type: data.type
-            }
-          },
+          where: {id: data.id},
           data: {
             name: data.name,
             type: data.type as PrismaRecipeType,

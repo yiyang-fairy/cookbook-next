@@ -8,7 +8,6 @@ import ApiClient from '@/lib/api-client';
 import Flex from "@/components/Flex";
 import { AddCircleOutline } from "antd-mobile-icons";
 import { useRouter } from 'next/navigation';
-
 // 修改轮播图数据的 id 格式
 const swiperItems = [
   {
@@ -128,15 +127,18 @@ export default function Home() {
               <Link
                 key={recipe.id}
                 href={`/detail/${recipe.id}`}
-                className="p-4 drop-shadow-xl rounded-lg bg-white transition-colors"
+                className="p-4 drop-shadow-xl rounded-lg bg-white transition-colors flex justify-between"
               >
-                <h2 className="text-lg font-semibold">{recipe.name}</h2>
+                <Flex direction="column" justify="space-between">
+                  <h2 className="text-lg font-semibold">{recipe.name}</h2>
                 <p className="text-gray-600">
                   烹饪时间: {recipe.cooking_time}分钟
                 </p>
-                <p className="text-sm text-gray-400">
-                  更新时间: {recipe.update_time}
-                </p>
+                </Flex>
+                <Flex>
+                  <Image className="rounded-md" src={recipe.cover_image} width={60} height={60} alt={recipe.name} />
+                </Flex>
+                
               </Link>
             ))}
             <Flex onClick={() => router.push('/edit')} alignItems="center" justify="center"> 
