@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Swiper, SideBar, Image } from "antd-mobile";
 import { Recipe, RecipeType, typeMap } from "@/types/recipe";
+import ApiClient from '@/lib/api-client';
 
 // 修改轮播图数据的 id 格式
 const swiperItems = [
@@ -36,28 +37,13 @@ export default function Home() {
   const fetchRecipes = async (type: RecipeType) => {
     try {
       setLoadingType(type);
-      const response = await fetch(`/api/menu-prisma?type=${activeKey}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      const data = await response.json();
-      if (!Array.isArray(data)) {
-        throw new Error("返回数据格式错误");
-      }
-
-      setRecipes(data);
-    } catch (error) {
-      console.error("获取菜单失败:", error);
-      setRecipes([]); // 出错时清空数据
-      // 可以添加一个 toast 提示
-      if (typeof window !== "undefined") {
-        alert(error instanceof Error ? error.message : "获取菜单失败");
-      }
+      const data = await ApiClient.get<Recipe[]>(
+        '/api/menu-prisma',
+        { type: activeKey },
+        (data): data is Recipe[] => Array.isArray(data)
+      );
+      
+      setRecipes(data || []);
     } finally {
       setLoadingType(null);
       setLoading(false);

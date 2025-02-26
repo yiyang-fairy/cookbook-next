@@ -5,6 +5,7 @@ import { Recipe } from "@/types/recipe";
 import { NavBar, Space, Image } from "antd-mobile";
 import Flex from "@/components/Flex";
 import { EditSOutline, DeleteOutline } from "antd-mobile-icons";
+import ApiClient from '@/lib/api-client';
 
 interface RecipeDetailProps {
   id: string;
@@ -17,12 +18,10 @@ export default function RecipeDetail({ id }: RecipeDetailProps) {
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
-        const response = await fetch(`/api/menu-prisma?id=${id}`);
-        if (!response.ok) {
-          throw new Error("获取菜谱详情失败");
+        const data = await ApiClient.get<Recipe>( '/api/menu-prisma', { id: id });
+        if (data) {
+          setRecipe(data);
         }
-        const data = await response.json();
-        setRecipe(data);
       } catch (error) {
         console.error("获取菜谱详情失败:", error);
       } finally {
@@ -53,23 +52,23 @@ export default function RecipeDetail({ id }: RecipeDetailProps) {
     <Flex direction="column" className="h-screen">
       {/* 顶部导航栏 */}
       <NavBar
-          onBack={() => window.history.back()}
-          right={
-            <Space style={{ fontSize: 24 }}>
-              <EditSOutline onClick={handleEdit} />
-              <DeleteOutline onClick={handleDelete} />
-            </Space>
-          }
-          style={{ backgroundColor: '#ff6b6b', color: '#fff' }}
-        >
-          {recipe.name}
-        </NavBar>
+        onBack={() => window.history.back()}
+        right={
+          <Space style={{ fontSize: 24 }}>
+            <EditSOutline onClick={handleEdit} />
+            <DeleteOutline onClick={handleDelete} />
+          </Space>
+        }
+        style={{ backgroundColor: '#ff6b6b', color: '#fff' }}
+      >
+        {recipe.name}
+      </NavBar>
       <Flex direction="column" className="p-4 overflow-auto flex-1">
         <Image
           className="rounded-md mb-3 drop-shadow-xl w-full h-40"
-          src={`https://picsum.photos/800/400?random=${recipe.id}`} 
+          src={`https://picsum.photos/800/400?random=${recipe.id}`}
           fit='cover'
-          alt="菜谱图片"/>
+          alt="菜谱图片" />
         {/* 菜品信息 */}
         <Flex direction="column" className="bg-white p-4 mb-3 drop-shadow-xl rounded-md">
           <h2 className="text-xl font-bold mb-2">{recipe.name}</h2>
