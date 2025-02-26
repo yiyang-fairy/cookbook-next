@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';  // 使用共享的 Prisma 实例
+import prisma from '@/lib/prisma';
 import { RecipeType as PrismaRecipeType } from '@prisma/client';
 import { RecipeType } from "@/types/recipe";
 import { NextResponse } from "next/server";
@@ -8,33 +8,55 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
+    const id = searchParams.get("id");
     console.log("type:", type);
+    console.log("id:", id);
 
-    // 添加错误处理和重试逻辑
-    let retries = 3;
-    let recipes;
-    
-    while (retries > 0) {
-      try {
-        recipes = await prisma.recipes.findMany({
-          where: type && type !== RecipeType.ALL ? {
-            type: type as PrismaRecipeType
-          } : undefined
-        });
-        break;
-      } catch (error) {
-        console.error(`尝试连接数据库失败，剩余重试次数: ${retries - 1}`);
-        retries--;
-        if (retries === 0) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
-      }
+    // 添加 Prisma 客户端状态检查
+    if (!prisma) {
+      console.error("Prisma 客户端未初始化");
+      return NextResponse.json(
+        { error: "数据库连接未初始化" },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(recipes);
+    try {
+      // 直接尝试查询，简化错误处理逻辑
+      const recipes = await prisma.recipes.findMany({
+        where: {
+          ...(id ? { id: id } : {}),
+          ...(type && type !== RecipeType.ALL ? { type: type as PrismaRecipeType } : {})
+        }
+      });
+
+      if (!recipes || recipes.length === 0) {
+        return NextResponse.json(
+          { error: "未找到菜谱数据" },
+          { status: 404 }
+        );
+      }
+
+      // 如果是查询单个 id，直接返回第一个结果
+      return NextResponse.json(id ? recipes[0] : recipes);
+    } catch (dbError) {
+      console.error("数据库查询错误:", dbError);
+      return NextResponse.json(
+        { 
+          error: "数据库查询失败",
+          message: (dbError as Error).message
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("GET Error:", error);
     return NextResponse.json(
-      { error: "服务器内部错误: " + (error as Error).message },
+      { 
+        error: "服务器内部错误",
+        message: (error as Error).message,
+        stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
+      },
       { status: 500 }
     );
   }

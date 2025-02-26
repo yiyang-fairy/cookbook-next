@@ -17,7 +17,7 @@ export default function RecipeDetail({ id }: RecipeDetailProps) {
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
-        const response = await fetch(`/api/menu-prisma/${id}`);
+        const response = await fetch(`/api/menu-prisma?id=${id}`);
         if (!response.ok) {
           throw new Error("获取菜谱详情失败");
         }
