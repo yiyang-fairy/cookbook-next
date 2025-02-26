@@ -50,16 +50,8 @@ interface RecipeInput {
   ingredients: string[];
   cooking_time: number;
   steps: string[];
+  cover_images: string;
 }
-
-// 验证器函数
-const recipeValidators = {
-  name: (value: string) => typeof value === 'string' && value.length > 0,
-  type: (value: PrismaRecipeType) => Object.values(RecipeType).includes(value as RecipeType),
-  ingredients: (value: string[]) => Array.isArray(value) && value.every(i => typeof i === 'string'),
-  cooking_time: (value: number) => typeof value === 'number' && value > 0,
-  steps: (value: string[]) => Array.isArray(value) && value.every(s => typeof s === 'string')
-};
 
 export async function POST(request: Request) {
   console.log("POST request");
@@ -67,25 +59,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("Request body:", body);
 
-    // 验证请求体是否为数组或单个对象
     const dataToInsert: RecipeInput[] = Array.isArray(body) ? body : [body];
-
-    // 验证每个菜谱数据
-    for (const item of dataToInsert) {
-      const validation = validateFields(
-        item,
-        ['name', 'type', 'ingredients', 'cooking_time', 'steps'] as (keyof RecipeInput)[],
-        recipeValidators
-      );
-
-      if (!validation.isValid) {
-        return createErrorResponse(
-          "数据格式不正确",
-          400,
-          new Error(validation.errors.join(', '))
-        );
-      }
-    }
 
     const recipes = await prisma.recipes.createMany({
       data: dataToInsert.map(item => ({

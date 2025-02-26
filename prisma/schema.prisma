@@ -38,3 +38,14 @@ enum RecipeType {
   MIXED
   DIET
 }
+
+model Recipe {
+  id                Int      @id @default(autoincrement())
+  name              String
+  coverImage        String
+  cookingTimeMinutes Int
+  ingredients       String[]
+  steps             String[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

@@ -66,7 +66,7 @@ export default function RecipeDetail({ id }: RecipeDetailProps) {
       <Flex direction="column" className="p-4 overflow-auto flex-1">
         <Image
           className="rounded-md mb-3 drop-shadow-xl w-full h-40"
-          src={`https://picsum.photos/800/400?random=${recipe.id}`}
+          src={recipe.cover_images || `https://picsum.photos/800/400?random=${recipe.id}`}
           fit='cover'
           alt="菜谱图片" />
         {/* 菜品信息 */}

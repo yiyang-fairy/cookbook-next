@@ -23,4 +23,5 @@ export interface Recipe {
   steps: string[];
   selectedCount: number;
   updateTime: string;
+  cover_images: string;
 } 

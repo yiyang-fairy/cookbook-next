@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Swiper, SideBar, Image } from "antd-mobile";
 import { Recipe, RecipeType, typeMap } from "@/types/recipe";
 import ApiClient from '@/lib/api-client';
+import Flex from "@/components/Flex";
+import { AddCircleOutline } from "antd-mobile-icons";
+import { useRouter } from 'next/navigation';
 
 // 修改轮播图数据的 id 格式
 const swiperItems = [
@@ -29,6 +32,7 @@ const swiperItems = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeKey, setActiveKey] = useState<RecipeType>(RecipeType.ALL);
@@ -124,7 +128,7 @@ export default function Home() {
               <Link
                 key={recipe.id}
                 href={`/detail/${recipe.id}`}
-                className="p-4 border rounded-lg bg-white transition-colors"
+                className="p-4 drop-shadow-xl rounded-lg bg-white transition-colors"
               >
                 <h2 className="text-lg font-semibold">{recipe.name}</h2>
                 <p className="text-gray-600">
@@ -138,6 +142,9 @@ export default function Home() {
                 </p>
               </Link>
             ))}
+            <Flex onClick={() => router.push('/edit')} alignItems="center" justify="center"> 
+              <AddCircleOutline /> 添加菜谱
+            </Flex>
           </div>
         </div>
       </div>
