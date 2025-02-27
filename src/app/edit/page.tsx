@@ -20,10 +20,28 @@ interface RecipeForm {
 export default function RecipeDetail() {
   const [form] = Form.useForm<RecipeForm>();
   const [loading, setLoading] = useState(false);
+  const [recipe, setRecipe] = useState<Partial<recipes>>({});
 
-  const recipe = JSON.parse(localStorage.getItem('editRecipe') || '{}');
+  // 在客户端加载时获取数据
+  useEffect(() => {
+    const savedRecipe = localStorage.getItem('editRecipe');
+    if (savedRecipe) {
+      const parsedRecipe = JSON.parse(savedRecipe);
+      setRecipe(parsedRecipe);
+      
+      // 设置表单初始值
+      form.setFieldsValue({
+        name: parsedRecipe.name,
+        cover: parsedRecipe.cover_image,
+        type: parsedRecipe.type,
+        cookTime: parsedRecipe.cooking_time,
+        ingredients: parsedRecipe.ingredients?.join('\n'),
+        steps: parsedRecipe.steps?.join('\n'),
+      });
+    }
+  }, [form]);
   
-  // 添加 useEffect 来处理组件卸载时的清理
+  // 添加组件卸载时的清理
   useEffect(() => {
     return () => {
       localStorage.removeItem('editRecipe');
@@ -42,7 +60,7 @@ export default function RecipeDetail() {
       const postData: Partial<recipes> = {
         ...(recipe.id && { id: recipe.id }),
         name: values.name.trim(),
-        type: values.type,
+        type: values.type as recipes['type'],
         ingredients: values.ingredients
           .split('\n')
           .map(i => i.trim())
@@ -89,14 +107,6 @@ export default function RecipeDetail() {
           form={form}
           onFinish={onFinish}
           layout='horizontal'
-          initialValues={{ 
-            name: recipe.name,
-            cover: recipe.cover_image,
-            type: recipe.type,
-            cookTime: recipe.cooking_time,
-            ingredients: recipe.ingredients?.join('\n'),
-            steps: recipe.steps?.join('\n'),
-          }}
           footer={
             <Button 
               block 

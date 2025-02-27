@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createNoise3D } from "simplex-noise";
 
 interface IconCloudProps {
   images: string[];
