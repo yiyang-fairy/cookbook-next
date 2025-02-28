@@ -1,93 +1,199 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import Flex from "@/components/Flex";
+import { Toast, NavBar, Button, FloatingBubble, Tabs, Popup } from "antd-mobile";
+import LuckyTurnTable from "@/components/LuckyTurnTable";
+import settingIcon from '/public/imgs/setting.gif';
+import { RecipeType, Recipe, typeMap } from "@/types/recipe";
+import ApiClient from "@/lib/api-client";
+import { CloseOutline } from "antd-mobile-icons";
+import ImagesCloud from "@/components/ImagesCloud";
 
+const defaultItems = [{
+  name: '红烧肉',
+  img: './imgs/jack.png'
+}, {
+  name: '酸辣白菜',
+  img: './imgs/jenny.png'
+}, {
+  name: '宫保鸡丁',
+  img: './imgs/jill.png'
+}];
 
-// 添加示例图标数据
-const icons = [
-  <svg key="1" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24">
-    <path fill="currentColor" d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45z" />
-  </svg>,
-  <svg key="2" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24">
-    <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21z" />
-  </svg>,
-  <svg key="3" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24">
-    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
-  </svg>
-];
-
-// 动态导入 IconCloud 组件
-const IconCloud = dynamic(
-  () => import('../../components/magicui/icon-cloud').then(mod => mod.IconCloud),
-  { ssr: false }
-);
-interface Prize {
-  id: number;
+export interface TurntableData {
   name: string;
+  img: string;
 }
 
 export default function TurntablePage() {
-  const router = useRouter();
-  const [isSpinning, setIsSpinning] = useState(false);
 
-  const handleSpin = async () => {
-    setIsSpinning(true);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
+  const [popupType, setPopupType] = useState<RecipeType>(RecipeType.ALL);
+  const [turntableData, setTurntableData] = useState<TurntableData[]>(defaultItems);
+  const [showTurntable, setShowTurntable] = useState(true);
 
-    try {
-      const response = await fetch('/api/turntable', {
-        method: 'POST',
-      });
-      const data = await response.json();
+  const turntableStart = () => {
+    console.log('开始抽奖');
+    setSelectedItem(null);
+  };
 
-      // 等待动画结束后显示结果
+  const turntableEnd = (prize: any) => {
+    setSelectedItem(prize.fonts[0].text);
+    setShowPopup(true);
+    setIsLeaving(false);
+
+
+    setTimeout(() => {
+      setIsLeaving(true);
       setTimeout(() => {
-        setIsSpinning(false);
-        alert(`恭喜获得：${data.prize.name}！`);
-      }, 3000);
-    } catch (error) {
-      console.error('抽奖失败:', error);
-      setIsSpinning(false);
-      alert('抽奖失败，请重试');
+        setShowPopup(false);
+      }, 1000);
+    }, 2000);
+  };
+
+  const handleRecipeClick = (recipeId: string) => {
+    const recipe = selectedRecipes.find(r => r.id === recipeId);  
+    if (recipe) {
+      setSelectedRecipes(prev => prev.filter(r => r.id !== recipeId));
+    } else {
+      const recipe = recipes.find(r => r.id === recipeId);
+      if (recipe) {
+        setSelectedRecipes(prev => [...prev, recipe]);
+      }
     }
   };
 
+  const getRecipes = async (type: RecipeType) => {
+    const data = await ApiClient.get<Recipe[]>(
+        '/api/menu-prisma',
+        { type: type },
+        (data): data is Recipe[] => Array.isArray(data)
+      );
+    setRecipes(data || []);
+  };
+
+  const finish = () => {
+    if(selectedRecipes.length > 20) {
+      Toast.show('菜品数量过多, 将以图片云形式展示');
+      setShowTurntable(false);
+    } 
+
+    setTurntableData(selectedRecipes.map(recipe => ({ name: recipe.name, img: recipe.cover_image })));
+    setVisible(false);
+    setSelectedItem(null);
+  }
+
+  useEffect(() => {
+    getRecipes(popupType);
+  }, [popupType]);
+
   return (
-    <div className="min-h-screen p-4">
-      <button
-        onClick={() => router.back()}
-        className="mb-4 text-blue-500 hover:text-blue-600"
+    <Flex className="h-screen w-screen" direction="column" alignItems="center" >
+      <NavBar
+        className="w-full"
+        onBack={() => window.history.back()}
+        style={{ backgroundColor: '#ff6b6b', color: '#fff' }}
       >
-        返回
-      </button>
+        今天吃什么?
+      </NavBar>
 
-      <h1 className="text-2xl font-bold mb-6">幸运转盘</h1>
+      <Flex className="w-full p-4 py-10" direction="column" alignItems="center">
+        <Flex justify="center" >
+          {showTurntable
+            ? <LuckyTurnTable prizes={turntableData} onEnd={turntableEnd} onStart={turntableStart} />
+            : <ImagesCloud data={turntableData} onEnd={turntableEnd} onStart={turntableStart}/>}
+        </Flex>
 
-      <div className="flex flex-col items-center">
-        <div
-          className={`w-64 h-64 border-8 border-yellow-500 rounded-full mb-6 flex items-center justify-center ${isSpinning ? 'animate-spin' : ''
-            }`}
-        >
-          <span className="text-lg font-bold">转盘区域</span>
-        </div>
-
-        {/* IconCloud 组件 */}
-        <div className="min-h-[400px] flex items-center justify-center">
+        {/* <div className="min-h-[400px] flex items-center justify-center">
           {typeof window !== 'undefined' && <IconCloud icons={icons} />}
-        </div>
+        </div> */}
 
-        <button
-          onClick={handleSpin}
-          disabled={isSpinning}
-          className={`px-8 py-3 rounded-full text-white ${isSpinning
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-yellow-500 hover:bg-yellow-600'
-            }`}
-        >
-          {isSpinning ? '旋转中...' : '开始抽奖'}
-        </button>
-      </div>
-    </div>
+        {selectedItem && (
+          <Flex className="mt-12 w-2/3 bg-[#ff6b6b] justify-center items-center px-4 py-3 rounded-lg text-nowrap" justify="center" alignItems="center">
+            <span className='text-xl font-bold text-white'>今天吃：</span>
+            <span className='text-2xl font-bold text-yellow-300'>{selectedItem}</span>
+          </Flex>
+        )}
+
+      </Flex>
+
+
+      <FloatingBubble
+        style={{
+          '--initial-position-bottom': '80px',
+          '--initial-position-left': '42px',
+          '--edge-distance': '24px',
+          '--background': '#ff6b6b',
+          'height': '0'
+        }}
+        offset={{ x: -10, y: -250 }}
+        onClick={() => {
+          setVisible(true)
+        }}
+      >
+        <img src={settingIcon.src} alt="设置"  className=""/>
+      </FloatingBubble>
+
+      <Popup
+        visible={visible}
+        onMaskClick={() => {
+          setVisible(false)
+        }}
+        onClose={() => {
+          setVisible(false)
+        }}
+        bodyStyle={{ height: '60vh' }}
+      >
+        <Flex direction='column' className="h-full w-full">
+          <Flex justify="space-between" alignItems="center">
+            <CloseOutline />
+            <Flex> 随机池内容</Flex>
+            <Button onClick={() => finish()}  >完成</Button>
+          </Flex>
+          <Flex>
+            <Tabs defaultActiveKey='ALL' style={{ width: '100%' }} onChange={(key) => {
+              setPopupType(key as RecipeType);
+            }}>
+              {Object.entries(typeMap).map(([key, title]) => (
+                <Tabs.Tab key={key} title={title} >
+                  <Flex>
+                    {recipes.map(recipe => (
+                      <Flex key={recipe.id} onClick={() => handleRecipeClick(recipe.id)}>
+                        <img  src={recipe.cover_image} alt={recipe.name} className=" w-8 h-8 round" />
+                        <div >{recipe.name}</div>
+                      </Flex>
+                    ))}
+                  </Flex>
+                </Tabs.Tab>
+              ))}
+            </Tabs>
+
+          </Flex>
+          <Flex>
+            <Flex>
+              已选择: 
+            </Flex>
+            <Flex wrap='wrap' style={{ flex: 1 }}> 
+              {selectedRecipes.map(recipe => (
+                <Flex  key={recipe.id}>
+                  <img  src={recipe.cover_image} alt={recipe.name}  className=" w-8 h-8 round"/>
+                  <div >{recipe.name}</div>
+                </Flex>
+              ))}
+            </Flex>
+          </Flex>
+        </Flex>
+      </Popup>
+
+
+    </Flex>
   );
 } 

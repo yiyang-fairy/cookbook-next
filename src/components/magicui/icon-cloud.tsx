@@ -15,6 +15,8 @@ interface Icon {
 interface IconCloudProps {
   icons?: React.ReactNode[];
   images?: string[];
+  speedMultiplier?: number;
+  yRotationSpeed?: number;
 }
 
 function easeOutCubic(t: number): number {
@@ -22,14 +24,14 @@ function easeOutCubic(t: number): number {
 }
 
 // 直接导出组件，不使用 dynamic
-export function IconCloud({ icons, images }: IconCloudProps) {
+export function IconCloud({ icons, images, speedMultiplier = 1, yRotationSpeed = 0 }: IconCloudProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [iconPositions, setIconPositions] = useState<Icon[]>([]);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [speedMultiplier, setSpeedMultiplier] = useState(1);
+  const [speedMultiplierState, setSpeedMultiplier] = useState(speedMultiplier);
   const [targetRotation, setTargetRotation] = useState<{
     x: number;
     y: number;
@@ -44,9 +46,15 @@ export function IconCloud({ icons, images }: IconCloudProps) {
   const rotationRef = useRef(rotation);
   const iconCanvasesRef = useRef<HTMLCanvasElement[]>([]);
   const imagesLoadedRef = useRef<boolean[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Create icon canvases once when icons/images change
   useEffect(() => {
+    if (!isMounted) return;
     if (!icons && !images) return;
 
     const items = icons || images || [];
@@ -95,10 +103,11 @@ export function IconCloud({ icons, images }: IconCloudProps) {
     });
 
     iconCanvasesRef.current = newIconCanvases;
-  }, [icons, images]);
+  }, [icons, images, isMounted]);
 
   // Generate initial icon positions on a sphere
   useEffect(() => {
+    if (!isMounted) return;
     const items = icons || images || [];
     const newIcons: Icon[] = [];
     const numIcons = items.length || 20;
@@ -125,7 +134,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
       });
     }
     setIconPositions(newIcons);
-  }, [icons, images]);
+  }, [icons, images, isMounted]);
 
   // Handle mouse events
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -213,34 +222,10 @@ export function IconCloud({ icons, images }: IconCloudProps) {
     setIsDragging(false);
   };
 
-  // Add speed boost function
-  const handleSpeedBoost = () => {
-    setSpeedMultiplier(50); // Set 5x speed
-    
-    // 2 seconds later gradually return to normal speed
-    setTimeout(() => {
-      const startTime = Date.now();
-      const duration = 1000; // 1 second deceleration process
-      
-      const slowDown = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(1, elapsed / duration);
-        
-        // Use easeOutCubic easing function for smoother deceleration
-        const newSpeed = 5 - (4 * easeOutCubic(progress));
-        setSpeedMultiplier(newSpeed);
-        
-        if (progress < 1) {
-          requestAnimationFrame(slowDown);
-        }
-      };
-      
-      requestAnimationFrame(slowDown);
-    }, 2000);
-  };
 
   // Animation and rendering
   useEffect(() => {
+    if (!isMounted) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
@@ -254,7 +239,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
       const dx = mousePos.x - centerX;
       const dy = mousePos.y - centerY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      const speed = (0.003 + (distance / maxDistance) * 0.01) * speedMultiplier;
+      const speed = (0.003 + (distance / maxDistance) * 0.01) * speedMultiplierState;
 
       if (targetRotation) {
         const elapsed = performance.now() - targetRotation.startTime;
@@ -276,7 +261,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
       } else if (!isDragging) {
         rotationRef.current = {
           x: rotationRef.current.x + (dy / canvas.height) * speed,
-          y: rotationRef.current.y + (dx / canvas.width) * speed,
+          y: rotationRef.current.y + (dx / canvas.width) * speed + yRotationSpeed,
         };
       }
 
@@ -334,7 +319,11 @@ export function IconCloud({ icons, images }: IconCloudProps) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation, speedMultiplier]);
+  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation, speedMultiplierState, yRotationSpeed, isMounted]);
+
+  if (!isMounted) {
+    return <div className="relative w-[400px] h-[400px]" />;
+  }
 
   return (
     <div className="relative">
@@ -350,12 +339,6 @@ export function IconCloud({ icons, images }: IconCloudProps) {
         aria-label="Interactive 3D Icon Cloud"
         role="img"
       />
-      <button
-        onClick={handleSpeedBoost}
-        className="absolute bottom-4 right-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-      >
-        加速
-      </button>
     </div>
   );
 }
