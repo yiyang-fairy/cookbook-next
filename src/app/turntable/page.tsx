@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Flex from "@/components/Flex";
 import { Toast, NavBar, Button, FloatingBubble, Tabs, Popup } from "antd-mobile";
-import LuckyTurnTable from "@/components/LuckyTurnTable";
+import LuckyTurnTable from "@/components/LuckyTurntable";
 import settingIcon from '/public/imgs/setting.gif';
 import { RecipeType, Recipe, typeMap } from "@/types/recipe";
 import ApiClient from "@/lib/api-client";
@@ -154,7 +154,7 @@ export default function TurntablePage() {
       >
         <Flex direction='column' className="h-full w-full">
           <Flex justify="space-between" alignItems="center">
-            <CloseOutline />
+            <CloseOutline  onClick={() => setVisible(false)}/>
             <Flex> 随机池内容</Flex>
             <Button onClick={() => finish()}  >完成</Button>
           </Flex>
