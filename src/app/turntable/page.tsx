@@ -124,7 +124,7 @@ export default function TurntablePage() {
         </Flex>
 
         {selectedItem && !showCelebration && (
-          <Link href={`/detail/${selectedItem.id}`} className="flex mt-12 w-2/3 bg-[#ff6b6b] justify-center items-center px-4 py-3 rounded-lg text-nowrap" justify="center" alignItems="center">
+          <Link href={`/detail/${selectedItem.id}`} className="flex mt-12 w-2/3 bg-[#ff6b6b] justify-center items-center px-4 py-3 rounded-lg text-nowrap">
             <span className='text-xl font-bold text-white'>今天吃：</span>
             <SparklesText text={selectedItem.name} />
           </Link>
