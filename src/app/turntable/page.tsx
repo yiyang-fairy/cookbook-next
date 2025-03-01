@@ -16,20 +16,6 @@ import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
 import 'animate.css/animate.min.css';
 import Link from 'next/link';
 
-const defaultItems = [{
-  id: '1',
-  name: '红烧肉',
-  img: './imgs/jack.png'
-}, {
-  id: '2',
-  name: '酸辣白菜',
-  img: './imgs/jenny.png'
-}, {
-  id: '3',
-  name: '宫保鸡丁',
-  img: './imgs/jill.png'
-}];
-
 export interface TurntableData {
   id: string;
   name: string;
@@ -45,7 +31,7 @@ export default function TurntablePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
   const [popupType, setPopupType] = useState<RecipeType>(RecipeType.ALL);
-  const [turntableData, setTurntableData] = useState<TurntableData[]>(defaultItems);
+  const [turntableData, setTurntableData] = useState<TurntableData[]>([]);
   const [showTurntable, setShowTurntable] = useState(true);
 
   const confettiRef = useRef<ConfettiRef>(null);
@@ -68,6 +54,16 @@ export default function TurntablePage() {
       }, 1500);
     }, 3000);
   };
+
+  const getDefaultItems = async () => {
+    const data = await ApiClient.get<Recipe[]>(
+      '/api/menu-prisma',
+      { type: RecipeType.ALL },
+      (data): data is Recipe[] => Array.isArray(data)
+    ) || [];
+
+    setTurntableData(data.slice(0, 5).map(recipe => ({ name: recipe.name, img: recipe.cover_image, id: recipe.id })));
+  }
 
   const handleRecipeClick = (recipeId: string) => {
     const recipe = selectedRecipes.find(r => r.id === recipeId);
@@ -102,8 +98,14 @@ export default function TurntablePage() {
   }
 
   useEffect(() => {
+    getDefaultItems();
+  }, []);
+
+  useEffect(() => {
     getRecipes(popupType);
   }, [popupType]);
+
+  
 
   return (
     <Flex className="h-screen w-screen" direction="column" alignItems="center" >
