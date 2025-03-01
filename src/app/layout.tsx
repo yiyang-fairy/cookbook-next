@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <div
-          className="fixed inset-0 z-[-1] bg-cover bg-center bg-no-repeat opacity-70"
+          className="fixed inset-0 z-[-1] bg-cover bg-center bg-no-repeat opacity-50"
           style={{ backgroundImage: "url(/imgs/food005.jpg)" }}
         />
         {children}

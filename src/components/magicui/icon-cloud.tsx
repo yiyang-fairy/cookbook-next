@@ -330,7 +330,7 @@ export function IconCloud({ icons, images, speedMultiplier = 1, yRotationSpeed =
       <canvas
         ref={canvasRef}
         width={400}
-        height={400}
+        height={300}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

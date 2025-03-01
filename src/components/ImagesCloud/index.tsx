@@ -5,6 +5,7 @@ import { Button } from "antd-mobile";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useRef } from "react";
 import Flex from "@/components/Flex";
+import { NeonGradientCard } from "../magicui/neon-gradient-card";
 // 动态导入 IconCloud 组件
 const IconCloud = dynamic(
   () => import('../../components/magicui/icon-cloud').then(mod => mod.IconCloud),
@@ -17,7 +18,7 @@ interface Prize {
 
 export default function ImagesCloud({ data, onEnd, onStart }: { 
     data: TurntableData[], 
-    onEnd: (prize: Prize) => void, 
+    onEnd: (prize: TurntableData) => void, 
     onStart: () => void 
 }) {
     const [yRotationSpeed, setYRotationSpeed] = useState(0);
@@ -46,8 +47,8 @@ export default function ImagesCloud({ data, onEnd, onStart }: {
                                 if (prev <= 0) {
                                     clearInterval(decelerateInterval);
                                     setIsSpinning(false);
-                                    // 提供与LuckyTurnTable相同格式的结果
-                                    onEnd({ fonts: [{ text: data[selectedIndexRef.current].name }] });
+                                    // 返回选中的数据
+                                    onEnd(data[selectedIndexRef.current]);
                                     return 0;
                                 }
                                 return prev - 0.005;
@@ -62,6 +63,7 @@ export default function ImagesCloud({ data, onEnd, onStart }: {
     }, [isSpinning, onEnd, isMounted, data]);
 
     const handleStart = () => {
+        if (isSpinning) return;
         setIsSpinning(true);
         onStart();
     }
@@ -71,10 +73,14 @@ export default function ImagesCloud({ data, onEnd, onStart }: {
     }
 
     return (
-        <div className="w-full h-full ">
+        <Flex direction="column" alignItems="center" justify="center" className="w-full h-full ">
             <IconCloud images={data.map(item => item.img)} yRotationSpeed={yRotationSpeed} />
-            <Button onClick={handleStart} disabled={isSpinning}>开始</Button>
-        </div>
+            <NeonGradientCard onClick={handleStart} className={`w-16 h-8 flex items-center justify-center p-0 ${isSpinning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 transition-transform'}`}>
+                <span className="pointer-events-none z-10 bg-gradient-to-br from-[#ff2975] from-35% to-[#00FFF1] bg-clip-text text-center text-sm text-nowrap font-medium text-transparent dark:drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
+                    开始
+                </span>
+            </NeonGradientCard>
+        </Flex>
     );
 }
 

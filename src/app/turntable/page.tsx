@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Flex from "@/components/Flex";
 import { Toast, NavBar, Button, FloatingBubble, Tabs, Popup } from "antd-mobile";
@@ -11,27 +10,36 @@ import { RecipeType, Recipe, typeMap } from "@/types/recipe";
 import ApiClient from "@/lib/api-client";
 import { CloseOutline } from "antd-mobile-icons";
 import ImagesCloud from "@/components/ImagesCloud";
+import { SparklesText } from "@/components/magicui/sparkles-text";
+import { Confetti, type ConfettiRef } from "@/components/magicui/confetti";
+import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
+import 'animate.css/animate.min.css';
+import Link from 'next/link';
 
 const defaultItems = [{
+  id: '1',
   name: '红烧肉',
   img: './imgs/jack.png'
 }, {
+  id: '2',
   name: '酸辣白菜',
   img: './imgs/jenny.png'
 }, {
+  id: '3',
   name: '宫保鸡丁',
   img: './imgs/jill.png'
 }];
 
 export interface TurntableData {
+  id: string;
   name: string;
   img: string;
 }
 
 export default function TurntablePage() {
 
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [showPopup, setShowPopup] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<TurntableData | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [visible, setVisible] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -40,27 +48,29 @@ export default function TurntablePage() {
   const [turntableData, setTurntableData] = useState<TurntableData[]>(defaultItems);
   const [showTurntable, setShowTurntable] = useState(true);
 
+  const confettiRef = useRef<ConfettiRef>(null);
+
   const turntableStart = () => {
     console.log('开始抽奖');
     setSelectedItem(null);
   };
 
   const turntableEnd = (prize: any) => {
-    setSelectedItem(prize.fonts[0].text);
-    setShowPopup(true);
+    console.log('抽奖结束', prize);
+    setShowCelebration(true);
+    setSelectedItem(prize);
     setIsLeaving(false);
-
 
     setTimeout(() => {
       setIsLeaving(true);
       setTimeout(() => {
-        setShowPopup(false);
-      }, 1000);
-    }, 2000);
+        setShowCelebration(false);
+      }, 1500);
+    }, 3000);
   };
 
   const handleRecipeClick = (recipeId: string) => {
-    const recipe = selectedRecipes.find(r => r.id === recipeId);  
+    const recipe = selectedRecipes.find(r => r.id === recipeId);
     if (recipe) {
       setSelectedRecipes(prev => prev.filter(r => r.id !== recipeId));
     } else {
@@ -73,20 +83,20 @@ export default function TurntablePage() {
 
   const getRecipes = async (type: RecipeType) => {
     const data = await ApiClient.get<Recipe[]>(
-        '/api/menu-prisma',
-        { type: type },
-        (data): data is Recipe[] => Array.isArray(data)
-      );
+      '/api/menu-prisma',
+      { type: type },
+      (data): data is Recipe[] => Array.isArray(data)
+    );
     setRecipes(data || []);
   };
 
   const finish = () => {
-    if(selectedRecipes.length > 20) {
+    if (selectedRecipes.length > 5) {
       Toast.show('菜品数量过多, 将以图片云形式展示');
       setShowTurntable(false);
-    } 
+    }
 
-    setTurntableData(selectedRecipes.map(recipe => ({ name: recipe.name, img: recipe.cover_image })));
+    setTurntableData(selectedRecipes.map(recipe => ({ name: recipe.name, img: recipe.cover_image, id: recipe.id })));
     setVisible(false);
     setSelectedItem(null);
   }
@@ -105,27 +115,47 @@ export default function TurntablePage() {
         今天吃什么?
       </NavBar>
 
+      {/* 抽奖内容 */}
       <Flex className="w-full p-4 py-10" direction="column" alignItems="center">
         <Flex justify="center" >
           {showTurntable
             ? <LuckyTurnTable prizes={turntableData} onEnd={turntableEnd} onStart={turntableStart} />
-            : <ImagesCloud data={turntableData} onEnd={turntableEnd} onStart={turntableStart}/>}
+            : <ImagesCloud data={turntableData} onEnd={turntableEnd} onStart={turntableStart} />}
         </Flex>
 
-        {/* <div className="min-h-[400px] flex items-center justify-center">
-          {typeof window !== 'undefined' && <IconCloud icons={icons} />}
-        </div> */}
-
-        {selectedItem && (
-          <Flex className="mt-12 w-2/3 bg-[#ff6b6b] justify-center items-center px-4 py-3 rounded-lg text-nowrap" justify="center" alignItems="center">
+        {selectedItem && !showCelebration && (
+          <Link href={`/detail/${selectedItem.id}`} className="flex mt-12 w-2/3 bg-[#ff6b6b] justify-center items-center px-4 py-3 rounded-lg text-nowrap" justify="center" alignItems="center">
             <span className='text-xl font-bold text-white'>今天吃：</span>
-            <span className='text-2xl font-bold text-yellow-300'>{selectedItem}</span>
-          </Flex>
+            <SparklesText text={selectedItem.name} />
+          </Link>
         )}
 
       </Flex>
 
+      {/* 庆祝动画 */}
+      {
+        showCelebration && (
+          <Flex style={{ position: "fixed" }} className={`animate__animated ${isLeaving ? 'animate__backOutDown' : 'animate__fadeInDownBig'} w-screen h-screen fixed top-0 left-0 z-10`} justify="center" alignItems="center">
 
+            <Flex>
+              <NeonGradientCard className="max-w-sm items-center justify-center text-center">
+                <span className="pointer-events-none z-10 h-full whitespace-pre-wrap bg-gradient-to-br p-6 from-[#ff2975] from-35% to-[#00FFF1] bg-clip-text text-center text-2xl font-bold leading-none tracking-tighter text-transparent dark:drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
+                  🎉 抽中了：{selectedItem?.name}
+                </span>
+              </NeonGradientCard>
+            </Flex>
+            <Confetti
+              ref={confettiRef}
+              className="absolute left-0 top-0 z-0 size-full "
+              onMouseEnter={() => {
+                confettiRef.current?.fire({});
+              }}
+            /></Flex>
+        )
+      }
+
+
+      {/* 设置按钮 */}
       <FloatingBubble
         style={{
           '--initial-position-bottom': '80px',
@@ -139,9 +169,10 @@ export default function TurntablePage() {
           setVisible(true)
         }}
       >
-        <img src={settingIcon.src} alt="设置"  className=""/>
+        <img src={settingIcon.src} alt="设置" className="" />
       </FloatingBubble>
 
+      {/* 设置弹窗 */}
       <Popup
         visible={visible}
         onMaskClick={() => {
@@ -154,7 +185,7 @@ export default function TurntablePage() {
       >
         <Flex direction='column' className="h-full w-full">
           <Flex justify="space-between" alignItems="center">
-            <CloseOutline  onClick={() => setVisible(false)}/>
+            <CloseOutline onClick={() => setVisible(false)} />
             <Flex> 随机池内容</Flex>
             <Button onClick={() => finish()}  >完成</Button>
           </Flex>
@@ -167,7 +198,7 @@ export default function TurntablePage() {
                   <Flex>
                     {recipes.map(recipe => (
                       <Flex key={recipe.id} onClick={() => handleRecipeClick(recipe.id)}>
-                        <img  src={recipe.cover_image} alt={recipe.name} className=" w-8 h-8 round" />
+                        <img src={recipe.cover_image} alt={recipe.name} className=" w-8 h-8 round" />
                         <div >{recipe.name}</div>
                       </Flex>
                     ))}
@@ -179,12 +210,12 @@ export default function TurntablePage() {
           </Flex>
           <Flex>
             <Flex>
-              已选择: 
+              已选择:
             </Flex>
-            <Flex wrap='wrap' style={{ flex: 1 }}> 
+            <Flex wrap='wrap' style={{ flex: 1 }}>
               {selectedRecipes.map(recipe => (
-                <Flex  key={recipe.id}>
-                  <img  src={recipe.cover_image} alt={recipe.name}  className=" w-8 h-8 round"/>
+                <Flex key={recipe.id}>
+                  <img src={recipe.cover_image} alt={recipe.name} className=" w-8 h-8 round" />
                   <div >{recipe.name}</div>
                 </Flex>
               ))}

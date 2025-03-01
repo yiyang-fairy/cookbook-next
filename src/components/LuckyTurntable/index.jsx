@@ -43,6 +43,8 @@ export default function App ({ prizes, onEnd, onStart }) {
   const formatPrize = (prize) => {
     const data = prize.map((item, index) => {
       return {
+        id: item.id,
+        name: item.name,
         background: colors[index],
         fonts: [{ text: item.name, fontColor: 'red' }]
       }
