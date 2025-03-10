@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import Flex from "@/components/Flex";
 import { Toast, NavBar, Button, FloatingBubble, Tabs, Popup } from "antd-mobile";
 import LuckyTurnTable from "@/components/LuckyTurntable";
@@ -15,6 +14,7 @@ import { Confetti, type ConfettiRef } from "@/components/magicui/confetti";
 import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
 import 'animate.css/animate.min.css';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export interface TurntableData {
   id: string;
@@ -33,6 +33,7 @@ export default function TurntablePage() {
   const [popupType, setPopupType] = useState<RecipeType>(RecipeType.ALL);
   const [turntableData, setTurntableData] = useState<TurntableData[]>([]);
   const [showTurntable, setShowTurntable] = useState(true);
+  const router = useRouter();
 
   const confettiRef = useRef<ConfettiRef>(null);
 
@@ -111,7 +112,7 @@ export default function TurntablePage() {
     <Flex className="h-screen w-screen" direction="column" alignItems="center" >
       <NavBar
         className="w-full"
-        onBack={() => window.history.back()}
+        onBack={() => router.back()}
         style={{ backgroundColor: '#ff6b6b', color: '#fff' }}
       >
         今天吃什么?

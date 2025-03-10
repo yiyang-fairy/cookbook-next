@@ -1,7 +1,6 @@
 "use client";
 
 import { TurntableData } from "@/app/turntable/page";
-import { Button } from "antd-mobile";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useRef } from "react";
 import Flex from "@/components/Flex";
@@ -11,10 +10,6 @@ const IconCloud = dynamic(
   () => import('../../components/magicui/icon-cloud').then(mod => mod.IconCloud),
   { ssr: false }
 );
-
-interface Prize {
-    fonts: Array<{ text: string }>;
-}
 
 export default function ImagesCloud({ data, onEnd, onStart }: { 
     data: TurntableData[], 
@@ -47,8 +42,10 @@ export default function ImagesCloud({ data, onEnd, onStart }: {
                                 if (prev <= 0) {
                                     clearInterval(decelerateInterval);
                                     setIsSpinning(false);
-                                    // 返回选中的数据
-                                    onEnd(data[selectedIndexRef.current]);
+                                    // 使用 setTimeout 延迟调用 onEnd
+                                    setTimeout(() => {
+                                        onEnd(data[selectedIndexRef.current]);
+                                    }, 0);
                                     return 0;
                                 }
                                 return prev - 0.005;

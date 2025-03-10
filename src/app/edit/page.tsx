@@ -1,6 +1,7 @@
 "use client";
 
 import { NavBar, Input, Button, TextArea, Form, Radio, Toast } from "antd-mobile";
+import { AddOutline, CloseOutline } from 'antd-mobile-icons';
 import Flex from "@/components/Flex";
 import ImageUploader from '@/components/ImageUploader';
 import { RecipeType, typeMap } from '@/types/recipe';
@@ -8,19 +9,27 @@ import ApiClient from '@/lib/api-client';
 import { useState, useEffect } from "react";
 import type { recipes } from '@prisma/client';
 
+interface Ingredient {
+  name: string;
+  amount: string;
+}
+
 interface RecipeForm {
   name: string;
   cover: string;
   type: RecipeType;
   cookTime: number;
-  ingredients: string;
-  steps: string;
+  ingredients: Ingredient[];
+  steps: string[];
 }
 
 export default function RecipeDetail() {
   const [form] = Form.useForm<RecipeForm>();
   const [loading, setLoading] = useState(false);
   const [recipe, setRecipe] = useState<Partial<recipes>>({});
+  const [cookingSteps, setCookingSteps] = useState<string[]>(['']);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [newIngredient, setNewIngredient] = useState<Ingredient>({ name: '', amount: '' });
 
   // 在客户端加载时获取数据
   useEffect(() => {
@@ -35,9 +44,22 @@ export default function RecipeDetail() {
         cover: parsedRecipe.cover_image,
         type: parsedRecipe.type,
         cookTime: parsedRecipe.cooking_time,
-        ingredients: parsedRecipe.ingredients?.join('\n'),
-        steps: parsedRecipe.steps?.join('\n'),
       });
+
+      // 设置食材列表
+      if (parsedRecipe.ingredients && parsedRecipe.ingredients.length > 0) {
+        // 将字符串数组转换为带数量的食材对象数组
+        const ingredientList = parsedRecipe.ingredients.map((item: string) => {
+          const [name, amount = '适量'] = item.split(',');
+          return { name: name.trim(), amount: amount.trim() };
+        });
+        setIngredients(ingredientList);
+      }
+      
+      // 设置烹饪步骤
+      if (parsedRecipe.steps && parsedRecipe.steps.length > 0) {
+        setCookingSteps(parsedRecipe.steps);
+      }
     }
   }, [form]);
   
@@ -47,6 +69,40 @@ export default function RecipeDetail() {
       localStorage.removeItem('editRecipe');
     };
   }, []);
+
+  const addStep = () => {
+    setCookingSteps([...cookingSteps, '']);
+  };
+
+  const updateStep = (index: number, value: string) => {
+    const newSteps = [...cookingSteps];
+    newSteps[index] = value;
+    setCookingSteps(newSteps);
+  };
+
+  const deleteStep = (index: number) => {
+    const newSteps = cookingSteps.filter((_, i) => i !== index);
+    setCookingSteps(newSteps);
+  };
+
+  const addIngredient = () => {
+    if (newIngredient.name.trim()) {
+      setIngredients(prev => [...prev, { 
+        name: newIngredient.name.trim(), 
+        amount: newIngredient.amount.trim() || '适量' 
+      }]);
+      setNewIngredient({ name: '', amount: '' });
+    } else {
+      Toast.show({
+        content: '请输入食材名称',
+        position: 'center',
+      });
+    }
+  };
+
+  const deleteIngredient = (index: number) => {
+    setIngredients(ingredients.filter((_, i) => i !== index));
+  };
 
   const onFinish = async (values: RecipeForm) => {
     setLoading(true);
@@ -61,16 +117,9 @@ export default function RecipeDetail() {
         ...(recipe.id && { id: recipe.id }),
         name: values.name.trim(),
         type: values.type as recipes['type'],
-        ingredients: values.ingredients
-          .split('\n')
-          .map(i => i.trim())
-          .flatMap(i => i.split(','))
-          .map(i => i.trim())
-          .filter(i => i.length > 0),
+        ingredients: ingredients.map(item => `${item.name},${item.amount}`),
         cooking_time: Math.max(1, Number(values.cookTime)),
-        steps: values.steps
-          ? values.steps.split('\n').map(s => s.trim()).filter(s => s.length > 0)
-          : ['暂无步骤'],
+        steps: cookingSteps.filter(step => step.trim().length > 0),
         cover_image: values.cover,
       };
 
@@ -161,32 +210,101 @@ export default function RecipeDetail() {
 
           {/* 食材清单 */}
           <Flex direction="column" className="bg-white p-4 mb-3 drop-shadow-xl rounded-md">
-            <h3 className="text-lg font-bold mb-2">食材清单</h3>
-            <Form.Item
-              name="ingredients"
-              rules={[{ required: true, message: '请输入食材清单' }]}
-            >
-              <TextArea
-                placeholder="请输入食材清单，每行一个食材"
-                rows={4}
-                className="w-full"
-              />
-            </Form.Item>
+            <h3 className="text-lg font-bold mb-4">食材清单</h3>
+            <div className="flex flex-wrap gap-2 mb-4 min-h-[40px]">
+              {ingredients.map((ingredient, index) => (
+                <div
+                  key={index}
+                  className="flex items-center bg-gray-50 rounded-md px-2  border border-gray-100 group relative"
+                >
+                  <span className="font-medium text-gray-700">{ingredient.name}</span>
+                  <span className="ml-2 text-gray-500">{ingredient.amount}</span>
+                  <div 
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-[#ff6b6b] rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-red-500 hover:shadow-md transition-all duration-200"
+                    onClick={() => deleteIngredient(index)}
+                  >
+                    <CloseOutline className="text-white text-xs" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <div className="text-sm text-gray-500 mb-2">添加新食材</div>
+              <Flex className="gap-2" justify="space-between">
+                <input
+                  type="text"
+                  className="w-[140px] px-2 py-1 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b6b]"
+                  placeholder="食材名称"
+                  value={newIngredient.name}
+                  onChange={e => setNewIngredient(prev => ({ ...prev, name: e.target.value }))}
+                  onKeyPress={e => e.key === 'Enter' && addIngredient()}
+                />
+                <input
+                  type="number"
+                  className="w-[80px] px-2 py-1 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b6b]"
+                  placeholder="数量"
+                  value={newIngredient.amount}
+                  onChange={e => setNewIngredient(prev => ({ ...prev, amount: e.target.value }))}
+                  onKeyPress={e => e.key === 'Enter' && addIngredient()}
+                />
+                <Button
+                  color="primary"
+                  className="!px-3 !min-w-[64px]"
+                  onClick={addIngredient}
+                  style={{
+                    backgroundColor: '#ff6b6b',
+                  }}
+                >
+                  添加
+                </Button>
+              </Flex>
+            </div>
           </Flex>
 
           {/* 烹饪步骤 */}
           <Flex direction="column" className="bg-white p-4 drop-shadow-xl rounded-md">
-            <h3 className="text-lg font-bold mb-2">烹饪步骤</h3>
-            <Form.Item
-              name="steps"
-              rules={[{ required: true, message: '请输入烹饪步骤' }]}
+            <h3 className="text-lg font-bold mb-4">烹饪步骤</h3>
+            <div className="space-y-4">
+              {cookingSteps.map((step, index) => (
+                <Flex 
+                  key={index} 
+                  className="p-4 bg-gray-50 rounded-lg border border-gray-100 transition-all duration-300 hover:shadow-md relative"
+                >
+                  <div className="mr-4 flex-shrink-0 flex items-center justify-center w-8 h-8 bg-[#ff6b6b] text-white rounded-full font-medium">
+                    {index + 1}
+                  </div>
+                  <TextArea
+                    value={step}
+                    onChange={(value) => updateStep(index, value)}
+                    placeholder="请输入步骤内容"
+                    className="flex-1 !bg-transparent !min-h-[24px]"
+                    autoSize={{ minRows: 1, maxRows: 5 }}
+                    style={{
+                      '--font-size': '14px',
+                    }}
+                  />
+                  <div 
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-[#ff6b6b] rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-red-500 hover:shadow-md transition-all duration-200"
+                    onClick={() => deleteStep(index)}
+                  >
+                    <CloseOutline className="text-white text-sm" />
+                  </div>
+                </Flex>
+              ))}
+            </div>
+            <Flex
+              onClick={addStep}
+              className="mt-6 text-[#ff6b6b]"
+              style={{
+                height: '48px',
+                border: '1px dashed #ff6b6b',
+                borderRadius: '8px',
+              }}
+              alignItems="center"
+              justify="center"
             >
-              <TextArea
-                placeholder="请输入烹饪步骤，每个步骤一行"
-                rows={6}
-                className="w-full"
-              />
-            </Form.Item>
+              <AddOutline className="mr-1" /> 添加步骤
+            </Flex>
           </Flex>
         </Form>
       </Flex>
