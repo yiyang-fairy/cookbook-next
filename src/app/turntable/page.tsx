@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Flex from "@/components/Flex";
-import { Toast, NavBar, Button, FloatingBubble, Tabs, Popup } from "antd-mobile";
+import { Toast, NavBar, Button, FloatingBubble, Tabs, Popup, Checkbox } from "antd-mobile";
 import LuckyTurnTable from "@/components/LuckyTurntable";
 import settingIcon from '/public/imgs/setting.gif';
 import { RecipeType, Recipe, typeMap } from "@/types/recipe";
@@ -88,6 +88,10 @@ export default function TurntablePage() {
   };
 
   const finish = () => {
+    if (selectedRecipes.length < 2) {
+      Toast.show('请至少选择2个菜品');
+      return;
+    }
     if (selectedRecipes.length > 5) {
       Toast.show('菜品数量过多, 将以图片云形式展示');
       setShowTurntable(false);
@@ -97,6 +101,46 @@ export default function TurntablePage() {
     setVisible(false);
     setSelectedItem(null);
   }
+
+  const handleCategorySelect = (type: RecipeType) => {
+    const recipesInCategory = recipes.filter(recipe => {
+      if (type === RecipeType.ALL) {
+        return true;
+      }
+      return recipe.type === type;
+    });
+    
+    const allSelected = recipesInCategory.every(recipe => 
+      selectedRecipes.some(r => r.id === recipe.id)
+    );
+
+    if (allSelected) {
+      // 如果全部选中，则取消所有该分类的选择
+      setSelectedRecipes(prev => 
+        prev.filter(recipe => !recipesInCategory.some(r => r.id === recipe.id))
+      );
+    } else {
+      // 如果未全部选中，则添加所有未选中的
+      const newRecipes = recipesInCategory.filter(recipe => 
+        !selectedRecipes.some(r => r.id === recipe.id)
+      );
+      setSelectedRecipes(prev => [...prev, ...newRecipes]);
+    }
+  };
+
+  const isCategorySelected = (type: RecipeType) => {
+    const recipesInCategory = recipes.filter(recipe => {
+      if (type === RecipeType.ALL) {
+        return true;
+      }
+      return recipe.type === type;
+    });
+    
+    return recipesInCategory.length > 0 && 
+      recipesInCategory.every(recipe => 
+        selectedRecipes.some(r => r.id === recipe.id)
+      );
+  };
 
   useEffect(() => {
     getDefaultItems();
@@ -184,45 +228,106 @@ export default function TurntablePage() {
         onClose={() => {
           setVisible(false)
         }}
-        bodyStyle={{ height: '60vh' }}
+        bodyStyle={{ height: '65vh' }}
+        className="rounded-t-2xl"
       >
-        <Flex direction='column' className="h-full w-full">
-          <Flex justify="space-between" alignItems="center">
-            <CloseOutline onClick={() => setVisible(false)} />
-            <Flex> 随机池内容</Flex>
-            <Button onClick={() => finish()}  >完成</Button>
+        <Flex direction='column' className="h-full w-full bg-white">
+          <Flex justify="space-between" alignItems="center" className="px-3 py-2 border-b border-gray-100">
+            <CloseOutline className="text-gray-500 text-lg" onClick={() => setVisible(false)} />
+            <Flex className="text-base font-medium">随机池内容</Flex>
+            <Flex 
+              onClick={() => finish()} 
+              className="bg-[#ff6b6b] text-white border-none text-sm px-3 py-1 rounded-md"
+            >
+              完成
+            </Flex>
           </Flex>
-          <Flex>
-            <Tabs defaultActiveKey='ALL' style={{ width: '100%' }} onChange={(key) => {
-              setPopupType(key as RecipeType);
-            }}>
+          
+          <Flex direction="column" className="flex-1 overflow-hidden">
+            {/* 已选择区域 - 固定在顶部 */}
+            <Flex direction="column" className="border-b border-gray-100 px-3 py-2">
+              <Flex justify="space-between" alignItems="center" className="mb-1">
+                <span className="text-gray-600 text-sm">已选择 ({selectedRecipes.length})</span>
+                {selectedRecipes.length > 0 && (
+                  <Button 
+                    size='mini'
+                    className="text-[#ff6b6b] border-none text-xs"
+                    onClick={() => setSelectedRecipes([])}
+                  >
+                    清空
+                  </Button>
+                )}
+              </Flex>
+              <Flex wrap="wrap" className="gap-1.5 max-h-[15vh] overflow-y-auto">
+                {selectedRecipes.map(recipe => (
+                  <Flex 
+                    key={recipe.id}
+                    className="bg-red-50 px-1.5 py-1 rounded-md items-center"
+                    onClick={() => handleRecipeClick(recipe.id)}
+                  >
+                    <img 
+                      src={recipe.cover_image} 
+                      alt={recipe.name} 
+                      className="w-6 h-6 rounded-md object-cover"
+                    />
+                    <div className="mx-1.5 text-xs">{recipe.name}</div>
+                    <CloseOutline className="text-gray-400 w-3 h-3" />
+                  </Flex>
+                ))}
+              </Flex>
+            </Flex>
+
+            {/* 菜品选择区域 */}
+            <Tabs 
+              defaultActiveKey='ALL'
+              style={{ width: '100%' }} 
+              onChange={(key) => {
+                setPopupType(key as RecipeType);
+              }}
+              className="flex-1"
+            >
               {Object.entries(typeMap).map(([key, title]) => (
-                <Tabs.Tab key={key} title={title} >
-                  <Flex>
+                <Tabs.Tab 
+                  key={key} 
+                  title={
+                    <Flex alignItems="center" className="gap-1.5">
+                      <Checkbox
+                        style={{
+                          '--icon-size': '14px',
+                          '--font-size': '14px',
+                          '--gap': '6px',
+                        }}
+                        checked={isCategorySelected(key as RecipeType)}
+                        onChange={() => handleCategorySelect(key as RecipeType)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="text-sm">{title}</span>
+                    </Flex>
+                  }
+                >
+                  <Flex wrap="wrap" className="gap-2 p-3 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 180px)' }}>
                     {recipes.map(recipe => (
-                      <Flex key={recipe.id} onClick={() => handleRecipeClick(recipe.id)}>
-                        <img src={recipe.cover_image} alt={recipe.name} className=" w-8 h-8 round" />
-                        <div >{recipe.name}</div>
+                      <Flex 
+                        key={recipe.id} 
+                        onClick={() => handleRecipeClick(recipe.id)}
+                        className={`p-1.5 rounded-lg border cursor-pointer transition-all duration-200 items-center ${
+                          selectedRecipes.some(r => r.id === recipe.id) 
+                            ? 'border-[#ff6b6b] bg-red-50' 
+                            : 'border-gray-200 hover:border-[#ff6b6b]'
+                        }`}
+                      >
+                        <img 
+                          src={recipe.cover_image} 
+                          alt={recipe.name} 
+                          className="w-8 h-8 rounded-lg object-cover"
+                        />
+                        <div className="ml-1.5 text-xs">{recipe.name}</div>
                       </Flex>
                     ))}
                   </Flex>
                 </Tabs.Tab>
               ))}
             </Tabs>
-
-          </Flex>
-          <Flex>
-            <Flex>
-              已选择:
-            </Flex>
-            <Flex wrap='wrap' style={{ flex: 1 }}>
-              {selectedRecipes.map(recipe => (
-                <Flex key={recipe.id}>
-                  <img src={recipe.cover_image} alt={recipe.name} className=" w-8 h-8 round" />
-                  <div >{recipe.name}</div>
-                </Flex>
-              ))}
-            </Flex>
           </Flex>
         </Flex>
       </Popup>
