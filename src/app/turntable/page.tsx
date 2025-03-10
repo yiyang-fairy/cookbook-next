@@ -37,6 +37,8 @@ export default function TurntablePage() {
 
   const confettiRef = useRef<ConfettiRef>(null);
 
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+
   const turntableStart = () => {
     console.log('开始抽奖');
     setSelectedItem(null);
@@ -103,24 +105,23 @@ export default function TurntablePage() {
   }
 
   const handleCategorySelect = (type: RecipeType) => {
-    const recipesInCategory = recipes.filter(recipe => {
-      if (type === RecipeType.ALL) {
-        return true;
-      }
-      return recipe.type === type;
-    });
+    // 获取当前分类下的所有菜品（从全部菜品中筛选）
+    const recipesInCategory = type === RecipeType.ALL 
+      ? allRecipes  // 如果是全部分类，使用所有菜品
+      : allRecipes.filter(recipe => recipe.type === type);  // 否则只过滤当前类型的菜品
     
-    const allSelected = recipesInCategory.every(recipe => 
+    // 检查当前分类下的菜品是否全部被选中
+    const allSelected = recipesInCategory.length > 0 && recipesInCategory.every(recipe => 
       selectedRecipes.some(r => r.id === recipe.id)
     );
 
     if (allSelected) {
-      // 如果全部选中，则取消所有该分类的选择
+      // 如果全部选中，则取消当前分类下所有菜品的选择
       setSelectedRecipes(prev => 
         prev.filter(recipe => !recipesInCategory.some(r => r.id === recipe.id))
       );
     } else {
-      // 如果未全部选中，则添加所有未选中的
+      // 如果未全部选中，则添加当前分类下所有未选中的菜品
       const newRecipes = recipesInCategory.filter(recipe => 
         !selectedRecipes.some(r => r.id === recipe.id)
       );
@@ -129,13 +130,12 @@ export default function TurntablePage() {
   };
 
   const isCategorySelected = (type: RecipeType) => {
-    const recipesInCategory = recipes.filter(recipe => {
-      if (type === RecipeType.ALL) {
-        return true;
-      }
-      return recipe.type === type;
-    });
+    // 获取当前分类下的所有菜品（从全部菜品中筛选）
+    const recipesInCategory = type === RecipeType.ALL 
+      ? allRecipes  // 如果是全部分类，使用所有菜品
+      : allRecipes.filter(recipe => recipe.type === type);  // 否则只过滤当前类型的菜品
     
+    // 检查是否所有菜品都被选中
     return recipesInCategory.length > 0 && 
       recipesInCategory.every(recipe => 
         selectedRecipes.some(r => r.id === recipe.id)
@@ -150,7 +150,17 @@ export default function TurntablePage() {
     getRecipes(popupType);
   }, [popupType]);
 
-  
+  useEffect(() => {
+    const getAllRecipes = async () => {
+      const data = await ApiClient.get<Recipe[]>(
+        '/api/menu-prisma',
+        { type: RecipeType.ALL },
+        (data): data is Recipe[] => Array.isArray(data)
+      );
+      setAllRecipes(data || []);
+    };
+    getAllRecipes();
+  }, []);
 
   return (
     <Flex className="h-screen w-screen" direction="column" alignItems="center" >
