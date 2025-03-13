@@ -1,6 +1,5 @@
 import { ImageUploader as AntImageUploader } from 'antd-mobile';
 import { supabase } from '@/lib/supabase';
-import { Form, Radio, Space } from 'antd';
 
 interface Props {
   value?: string[];
