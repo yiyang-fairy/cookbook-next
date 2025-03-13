@@ -70,3 +70,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+div {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}

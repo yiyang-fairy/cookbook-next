@@ -232,65 +232,70 @@ export default function TurntablePage() {
       {/* 设置弹窗 */}
       <Popup
         visible={visible}
-        onMaskClick={() => {
-          setVisible(false)
-        }}
-        onClose={() => {
-          setVisible(false)
-        }}
-        bodyStyle={{ height: '65vh' }}
-        className="rounded-t-2xl"
+        onMaskClick={() => setVisible(false)}
+        onClose={() => setVisible(false)}
+        bodyStyle={{ height: '60vh' }}
+        className="rounded-t-2xl w-full"
       >
-        <Flex direction='column' className="h-full w-full bg-white">
-          <Flex justify="space-between" alignItems="center" className="px-3 py-2 border-b border-gray-100">
-            <CloseOutline className="text-gray-500 text-lg" onClick={() => setVisible(false)} />
+        <Flex direction="column" className="h-full w-full bg-white">
+          {/* 顶部标题栏 */}
+          <Flex justify="space-between" alignItems="center" className="px-4 py-2 border-b border-gray-100 w-full sticky top-0 bg-white/80 backdrop-blur-sm z-10">
+            <CloseOutline className="text-gray-500 text-lg cursor-pointer hover:text-gray-700 transition-colors" onClick={() => setVisible(false)} />
             <Flex className="text-base font-medium">随机池内容</Flex>
             <Flex 
               onClick={() => finish()} 
-              className="bg-[#ff6b6b] text-white border-none text-sm px-3 py-1 rounded-md"
+              className="bg-[#ff6b6b] text-white text-sm px-3 py-1 rounded-full cursor-pointer hover:bg-[#ff5252] transition-colors active:scale-95 transform"
             >
               完成
             </Flex>
           </Flex>
           
-          <Flex direction="column" className="flex-1 overflow-hidden">
+          <Flex direction="column" className="flex-1 overflow-hidden w-full">
             {/* 已选择区域 - 固定在顶部 */}
-            <Flex direction="column" className="border-b border-gray-100 px-3 py-2">
-              <Flex justify="space-between" alignItems="center" className="mb-1">
-                <span className="text-gray-600 text-sm">已选择 ({selectedRecipes.length})</span>
+            <Flex direction="column" className="border-b border-gray-100 px-4 py-2 w-full bg-white/80 backdrop-blur-sm">
+              <Flex justify="space-between" alignItems="center" className="mb-1.5 w-full">
+                <span className="text-gray-600 text-sm font-medium">已选择 ({selectedRecipes.length})</span>
                 {selectedRecipes.length > 0 && (
                   <Button 
-                    size='mini'
-                    className="text-[#ff6b6b] border-none text-xs"
+                    size="mini"
+                    className="!text-[#ff6b6b] !border-none hover:!text-[#ff5252] hover:!bg-red-50 transition-colors text-xs"
                     onClick={() => setSelectedRecipes([])}
                   >
                     清空
                   </Button>
                 )}
               </Flex>
-              <Flex wrap="wrap" className="gap-1.5 max-h-[15vh] overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5 max-h-[12vh] overflow-y-auto w-full scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent pb-1">
                 {selectedRecipes.map(recipe => (
                   <Flex 
                     key={recipe.id}
-                    className="bg-red-50 px-1.5 py-1 rounded-md items-center"
+                    className="bg-red-50 hover:bg-red-100 px-2 py-1 rounded-full items-center cursor-pointer transition-colors group"
                     onClick={() => handleRecipeClick(recipe.id)}
                   >
                     <img 
                       src={recipe.cover_image} 
                       alt={recipe.name} 
-                      className="w-6 h-6 rounded-md object-cover"
+                      className="w-4 h-4 rounded-full object-cover"
                     />
-                    <div className="mx-1.5 text-xs">{recipe.name}</div>
-                    <CloseOutline className="text-gray-400 w-3 h-3" />
+                    <div className="mx-1.5 text-xs text-gray-700">{recipe.name}</div>
+                    <CloseOutline className="text-gray-400 w-3 h-3 group-hover:text-gray-600" />
                   </Flex>
                 ))}
-              </Flex>
+              </div>
             </Flex>
 
             {/* 菜品选择区域 */}
             <Tabs 
-              defaultActiveKey='ALL'
-              style={{ width: '100%' }} 
+              defaultActiveKey="ALL"
+              style={{ 
+                width: '100%',
+                '--fixed-active-line-width': '100%',
+                '--active-line-height': '1px',
+                '--active-line-color': '#ff6b6b',
+                '--active-title-color': '#ff6b6b',
+                '--title-font-size': '13px',
+                '--content-padding': '8px',
+              }} 
               onChange={(key) => {
                 setPopupType(key as RecipeType);
               }}
@@ -303,9 +308,9 @@ export default function TurntablePage() {
                     <Flex alignItems="center" className="gap-1.5">
                       <Checkbox
                         style={{
+                          '--font-size': '13px',
                           '--icon-size': '14px',
-                          '--font-size': '14px',
-                          '--gap': '6px',
+                          '--gap': '4px',
                         }}
                         checked={isCategorySelected(key as RecipeType)}
                         onChange={() => handleCategorySelect(key as RecipeType)}
@@ -315,26 +320,28 @@ export default function TurntablePage() {
                     </Flex>
                   }
                 >
-                  <Flex wrap="wrap" className="gap-2 p-3 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 180px)' }}>
+                  <div className="grid grid-cols-4 gap-1.5 p-2 overflow-y-auto">
                     {recipes.map(recipe => (
                       <Flex 
                         key={recipe.id} 
+                        direction="column"
+                        alignItems="center"
                         onClick={() => handleRecipeClick(recipe.id)}
-                        className={`p-1.5 rounded-lg border cursor-pointer transition-all duration-200 items-center ${
+                        className={`p-1 rounded-md border transition-all duration-200 cursor-pointer hover:shadow-sm ${
                           selectedRecipes.some(r => r.id === recipe.id) 
                             ? 'border-[#ff6b6b] bg-red-50' 
-                            : 'border-gray-200 hover:border-[#ff6b6b]'
+                            : 'border-gray-100 hover:border-[#ff6b6b]/30 hover:bg-red-50/30'
                         }`}
                       >
                         <img 
                           src={recipe.cover_image} 
                           alt={recipe.name} 
-                          className="w-8 h-8 rounded-lg object-cover"
+                          className="w-10 h-10 rounded-md object-cover"
                         />
-                        <div className="ml-1.5 text-xs">{recipe.name}</div>
+                        <div className="mt-0.5 text-xs text-gray-700 text-center break-words w-full leading-[1.1] line-clamp-2">{recipe.name}</div>
                       </Flex>
                     ))}
-                  </Flex>
+                  </div>
                 </Tabs.Tab>
               ))}
             </Tabs>

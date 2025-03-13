@@ -24,4 +24,7 @@ export interface Recipe {
   selected_count: number;
   update_time: string;
   cover_image: string;
+  stepType: 'VIDEO' | 'IMAGES';
+  stepVideo: string[];
+  stepImages: string[];
 } 

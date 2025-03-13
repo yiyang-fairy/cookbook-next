@@ -28,6 +28,9 @@ model recipes {
   selected_count Int?
   update_time    DateTime?  @db.Timestamp(6)
   cover_image    String?
+  stepType       StepType?  @default(VIDEO)
+  stepImages     String[]
+  stepVideo      String[]
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -36,4 +39,9 @@ enum RecipeType {
   VEGETABLE
   MIXED
   DIET
+}
+
+enum StepType {
+  IMAGES
+  VIDEO
 }
